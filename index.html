@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#d81b24" id="meta-theme-color">
-  <title>雲端老黃曆</title>
+  <title>專屬老黃曆 (雲端版)</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lunar-javascript/1.6.12/lunar.min.js"></script>
   
@@ -909,7 +909,7 @@
         const articleKeys = Object.keys(customArticles).sort((a, b) => b.localeCompare(a));
         
         if (articleKeys.length > 0) {
-          let tocHTML = `《 文美文集 》目錄\n\n`;
+          let tocHTML = `《靜心隨筆，日新又新》\n\n`;
           let items = articleKeys.map(k => {
             const y = k.substring(0, 4);
             const m = parseInt(k.substring(4, 6), 10);
@@ -981,9 +981,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
