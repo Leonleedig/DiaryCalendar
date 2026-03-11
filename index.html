@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#d81b24" id="meta-theme-color">
-  <title>專屬老黃曆 (雲端版)</title>
+  <title>專屬雲端老黃曆</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lunar-javascript/1.6.12/lunar.min.js"></script>
   
@@ -15,7 +15,7 @@
     :root {
       --theme-bg: #8B5A2B;
       --theme-a: #0d47a1; /* A組：日期、紀年、農曆 (預設經典藍) */
-      --theme-b: #d81b24; /* B組：主標題、文章區 (預設經典紅) */
+      --theme-b: #d81b24; /* B組：主標題、靜心隨筆 (預設經典紅) */
       --theme-c: #2e7d32; /* C組：節氣、宜忌 (預設長青綠) */
       --theme-paper: #fdfdfd;
     }
@@ -25,7 +25,7 @@
       background-color: var(--theme-bg);
       background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 2px, transparent 2px, transparent 4px);
       display: flex; flex-direction: column; 
-      min-height: 100vh; min-height: 100dvh; /* ★ 解除高度鎖定，改為最小高度，讓超出畫面的內容可以原生上下滑動 */
+      min-height: 100vh; min-height: 100dvh; 
       font-family: "BiauKai", "DFKai-SB", "楷體", "標楷體", "PMingLiU", serif;
       -webkit-user-select: none; user-select: none; 
     }
@@ -33,7 +33,7 @@
 
     /* --- 主視圖區 --- */
     .main-view {
-      flex: 1; display: flex; justify-content: center; align-items: flex-start; /* ★ 允許子元素隨內容自然長高 */
+      flex: 1; display: flex; justify-content: center; align-items: flex-start; 
       padding: 15px; position: relative; cursor: grab; 
     }
     .main-view:active { cursor: grabbing; }
@@ -42,7 +42,7 @@
       width: 100%; max-width: 450px; background: var(--theme-paper);
       border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
       position: relative; margin: 0 auto; display: flex; flex-direction: column; 
-      min-height: calc(100vh - 30px); /* ★ 保持初始滿版，但不鎖死最大高度 */
+      min-height: calc(100vh - 30px); 
     }
 
     .binding {
@@ -60,13 +60,11 @@
       text-align: center; padding: 30px 10px 15px; font-size: clamp(28px, 8vw, 36px); 
       font-weight: bold; letter-spacing: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.4); 
       border-bottom: 3px solid rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; 
-      position: relative; cursor: pointer; z-index: 10; flex-shrink: 0; 
+      position: relative; z-index: 10; flex-shrink: 0; 
     }
-    .header::after {
-      display: none; /* 隱藏「點擊載入文本」提示 */
-    }
+    .header::after { display: none; }
 
-    /* ★ 頂部設定按鈕 (純字元齒輪) */
+    /* 頂部設定按鈕 */
     .header-settings-btn {
       position: absolute; top: 20px; right: 15px;
       font-size: 24px; color: #ffffff; cursor: pointer; 
@@ -80,7 +78,6 @@
       padding: 15px; position: relative; border-radius: 0 0 8px 8px;
       background: var(--theme-paper); will-change: transform, opacity;
       flex: 1; display: flex; flex-direction: column;
-      /* ★ 移除了 overflow-y 限制，讓內容直接撐開整張紙 */
     }
 
     .top-info, .main-grid, .memo-box { flex-shrink: 0; }
@@ -89,14 +86,17 @@
     .top-info {
       display: flex; justify-content: space-between; align-items: center;
       color: var(--theme-a); font-weight: bold; 
-      font-size: clamp(16px, 4vw, 20px); /* ★ 動態縮放 */
+      font-size: clamp(15px, 3.5vw, 20px); 
       border-bottom: 2px solid var(--theme-a); padding-bottom: 5px; margin-bottom: 15px;
     }
 
+    /* 回今日按鈕 */
     .btn-small-today {
       background-color: var(--theme-a); color: white; border: none; 
-      padding: 4px 10px; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold;
-      transition: opacity 0.2s;
+      padding: 8px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: bold;
+      transition: opacity 0.2s; white-space: nowrap; min-height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 10;
     }
     .btn-small-today:active { opacity: 0.7; }
 
@@ -116,56 +116,35 @@
       display: grid; grid-template-columns: 1fr auto 1fr; gap: 5px; margin-bottom: 15px;
     }
 
-    /* A組：左側農曆 */
-    .left-lunar { 
+    .left-lunar, .right-solar { 
       writing-mode: vertical-rl; text-orientation: upright; 
-      color: var(--theme-a); font-weight: bold; 
-      font-size: clamp(20px, min(6vw, 3.5dvh), 26px); /* ★ 雙軸限制：同時看寬度與高度，避免太高或太寬 */
-      letter-spacing: 3px;
-      display: flex; flex-direction: column; gap: 12px; align-items: flex-start;
+      font-weight: bold; font-size: clamp(20px, min(6vw, 3.5dvh), 26px); 
+      letter-spacing: 3px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start;
       transform: translateX(-1.5em); 
     }
-    
-    /* C組：右側節氣 */
-    .right-solar { 
-      writing-mode: vertical-rl; text-orientation: upright; 
-      color: var(--theme-c); font-weight: bold; 
-      font-size: clamp(20px, min(6vw, 3.5dvh), 26px); /* ★ 雙軸限制：同時看寬度與高度 */
-      letter-spacing: 3px;
-      display: flex; flex-direction: column; gap: 12px; align-items: flex-start;
-      transform: translateX(-1.5em); 
-    }
-
+    .left-lunar { color: var(--theme-a); }
+    .right-solar { color: var(--theme-c); }
     .v-col { display: inline-flex; align-items: center; }
     
-    /* A組："農曆"背景色塊 */
-    .lunar-badge {
-      background-color: var(--theme-a); color: white; padding: 6px; 
-      border-radius: 4px; margin-bottom: 10px; font-size: 20px;
-    }
-    /* C組："節氣"背景色塊 */
+    .lunar-badge { background-color: var(--theme-a); color: white; padding: 6px; border-radius: 4px; margin-bottom: 10px; font-size: 20px; }
     .solar-badge { background-color: var(--theme-c); } 
 
-    /* A組：中央數字與星期 */
     .center-date { display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .big-number {
-      /* ★ 核心防呆：字體大小取 (35vw寬度 或 20dvh高度) 中比較小的那個，並限制在 80px ~ 180px 之間 */
       font-size: clamp(80px, min(35vw, 20dvh), 180px); 
       font-family: Arial, sans-serif; font-weight: 900;
       color: var(--theme-a); line-height: 0.85; margin: 5px 0; letter-spacing: -5px;
     }
     .weekday {
-      font-size: clamp(20px, min(6vw, 4dvh), 30px); /* ★ 動態縮放 */
+      font-size: clamp(20px, min(6vw, 4dvh), 30px); 
       color: white; background-color: var(--theme-a);
       width: 100%; text-align: center; padding: 8px 0; border-radius: 6px; font-weight: bold; letter-spacing: 5px;
     }
 
-    /* 備忘錄 (配合A組日期資訊) */
     .memo-box {
       border: 2px dashed var(--theme-a); border-radius: 6px; display: flex;
       margin-bottom: 15px; background: rgba(255,255,255,0.6); align-items: stretch;
-      overflow: hidden;
-      min-height: 60px; /* ★ 確保備忘錄即使被擠壓也保有基本高度 */
+      overflow: hidden; min-height: 60px; 
     }
     .memo-title {
       background-color: var(--theme-a); color: white; padding: 10px 8px;
@@ -178,14 +157,13 @@
     .memo-content {
       padding: 10px; flex: 2; display: flex; align-items: center; position: relative;
     }
-    .memo-content div { font-size: 18px; font-weight: bold; color: #333; line-height: 1.5; white-space: pre-wrap; width: 100%; } /* ★ 移除內部高度鎖定 */
+    .memo-content div { font-size: 18px; font-weight: bold; color: #333; line-height: 1.5; white-space: pre-wrap; width: 100%; } 
     .memo-content textarea {
       width: 100%; font-size: 16px; border: 1px solid var(--theme-a); 
       border-radius: 4px; padding: 5px; resize: none; font-family: inherit;
-      overflow: hidden; /* ★ 隱藏捲軸，配合後續的 JS 自動長高機制 */
+      overflow: hidden; 
     }
 
-    /* C組：橫式宜忌區塊 */
     .memo-almanac {
       flex: 1.2; border-left: 2px dashed var(--theme-c); padding: 8px 10px;
       display: flex; flex-direction: column; justify-content: center; gap: 10px;
@@ -198,7 +176,6 @@
     .h-icon.icon-ji { background-color: #333; }
     .h-text { line-height: 1.3; }
 
-    /* B組：文章編輯區與內容 */
     .article-container {
       display: flex; flex-direction: column; flex: 1; min-height: 0; margin-bottom: 5px;
     }
@@ -206,58 +183,62 @@
       background-color: var(--theme-b); color: white;
       text-align: center; padding: 6px 10px; font-size: 16px; font-weight: bold;
       letter-spacing: 2px; cursor: pointer; border-radius: 6px 6px 0 0;
-      flex-shrink: 0; transition: opacity 0.2s;
+      flex-shrink: 0; transition: opacity 0.2s; position: relative; z-index: 1; 
     }
     .article-header-btn:active { opacity: 0.8; }
 
-    .footer-wrapper { position: relative; flex: 1; display: flex; min-height: 0; }
+    .footer-wrapper { position: relative; flex: 1; display: block; min-height: 0; width: 100%; z-index: 2; }
+    
     .footer {
       border: 3px solid var(--theme-b); border-top: none; border-radius: 0 0 6px 6px; 
-      padding: 15px; color: var(--theme-b); transition: all 0.3s; 
-      background: #fff; flex: 1; overflow-x: auto; 
-      display: block; cursor: auto; position: relative;
-      min-height: 250px; /* ★ 給予舒適的預設高度，但允許無限向下長高 */
+      color: var(--theme-b); transition: all 0.3s; 
+      background: #fff; display: block; position: relative;
+      width: 100%; max-width: 100%; overflow: visible; min-height: 250px; 
     }
-    .footer::-webkit-scrollbar { height: 6px; }
-    .footer::-webkit-scrollbar-thumb { background-color: var(--theme-b); border-radius: 4px; opacity: 0.5; }
-    .footer::-webkit-scrollbar-track { background-color: #f0f0f0; border-radius: 4px; }
+    
+    .reading-view-container {
+      width: 100%; max-width: 100%; overflow-x: auto; overflow-y: hidden;
+      transform: rotateX(180deg); direction: rtl; display: block; margin-top: -6px; 
+      --svg-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='11 17 6 12 11 7'/%3E%3Cpolyline points='18 17 13 12 18 7'/%3E%3C/svg%3E");
+      --svg-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='13 17 18 12 13 7'/%3E%3Cpolyline points='6 17 11 12 6 7'/%3E%3C/svg%3E");
+    }
+    .reading-view-container::-webkit-scrollbar { height: 12px; } 
+    .reading-view-container::-webkit-scrollbar-thumb { 
+      background-color: var(--theme-b); border-radius: 6px; border: 2px solid #fff; background-repeat: no-repeat;
+    }
+    .reading-view-container[data-scroll-state="start"]::-webkit-scrollbar-thumb {
+      background-image: var(--svg-left); background-position: left 4px center;
+    }
+    .reading-view-container[data-scroll-state="end"]::-webkit-scrollbar-thumb {
+      background-image: var(--svg-right); background-position: right 4px center;
+    }
+    .reading-view-container[data-scroll-state="middle"]::-webkit-scrollbar-thumb {
+      background-image: var(--svg-left), var(--svg-right); background-position: left 4px center, right 4px center;
+    }
+    .reading-view-container::-webkit-scrollbar-track { background: transparent; border: none; box-shadow: none; } 
     
     .footer-info { 
+      transform: rotateX(180deg); padding: 15px; 
       font-size: 18px; line-height: 2; font-weight: bold; white-space: pre-wrap; 
       writing-mode: vertical-rl; text-orientation: upright; text-align: left;
-      min-height: 200px; /* ★ 確保直排閱讀區有基本高度 */
+      direction: ltr; min-height: 250px; display: inline-block; vertical-align: top;
     }
 
-    /* ★ 目錄連結專用樣式 */
-    .toc-item {
-      cursor: pointer;
-      text-decoration: underline;
-      text-decoration-style: dashed;
-      text-underline-position: under right;
-      transition: opacity 0.2s;
-    }
+    .toc-item { cursor: pointer; text-decoration: underline; text-decoration-style: dashed; text-underline-position: under right; transition: opacity 0.2s; }
     .toc-item:active { opacity: 0.5; }
 
     #edit-article {
-      width: 100%; resize: none; border: 1px dashed var(--theme-b);
+      margin: 15px; width: calc(100% - 30px);
+      resize: none; border: 1px dashed var(--theme-b);
       border-radius: 4px; padding: 10px; font-size: 18px; font-family: inherit;
-      writing-mode: horizontal-tb; overflow: hidden; min-height: 200px; /* ★ 隱藏內部捲軸，允許自動向下長高 */
-    }
-
-    .scroll-hint {
-      position: absolute; left: 3px; top: 3px; bottom: 3px; width: 40px;
-      background: linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
-      display: flex; align-items: center; justify-content: flex-start; padding-left: 8px;
-      color: var(--theme-b); font-size: 24px; pointer-events: none; opacity: 0; 
-      transition: opacity 0.3s ease; border-radius: 4px 0 0 4px; z-index: 10;
+      writing-mode: horizontal-tb; overflow: hidden; min-height: 200px; direction: ltr;
     }
 
     .sync-status {
       position: absolute; top: 12px; left: 12px; z-index: 50; 
       font-size: 13px; color: rgba(255,255,255,0.9); font-weight: bold;
       background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 20px;
-      display: flex; align-items: center; gap: 4px; transition: opacity 0.5s;
-      pointer-events: none; 
+      display: flex; align-items: center; gap: 4px; transition: opacity 0.5s; pointer-events: none; 
     }
 
     .anim-swipe-left { animation: swipeLeft 0.35s forwards ease-in; }
@@ -273,29 +254,28 @@
       z-index: 999; opacity: 0; transition: opacity 0.3s;
     }
     .modal-overlay.show { display: flex; opacity: 1; }
+    
     .modal-content {
       background: #fff; width: 90%; max-width: 400px; padding: 25px;
       border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-family: sans-serif;
+      max-height: 85vh; overflow-y: auto;
     }
+    .modal-content::-webkit-scrollbar { width: 6px; }
+    .modal-content::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 3px; }
+
     .modal-title { font-size: 24px; margin-bottom: 20px; font-weight: bold; text-align: center; color: #333; }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; margin-bottom: 8px; font-size: 18px; font-weight: bold; color: #555; }
     .form-control { width: 100%; padding: 12px; font-size: 18px; border: 1px solid #ccc; border-radius: 8px; }
     
-    /* 顏色設定器專屬排版 */
-    .color-row {
-      display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
-    }
-    .color-row input[type="color"] {
-      width: 45px; height: 45px; padding: 0; border: 2px solid #ccc; 
-      border-radius: 8px; cursor: pointer;
-    }
+    .color-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .color-row input[type="color"] { width: 45px; height: 45px; padding: 0; border: 2px solid #ccc; border-radius: 8px; cursor: pointer; }
     .color-row span { font-size: 16px; font-weight: bold; color: #333; }
 
     .modal-actions { display: flex; gap: 10px; margin-top: 25px; }
     .modal-btn { flex: 1; padding: 15px; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; }
     .btn-cancel { background: #e0e0e0; color: #333; }
-    .btn-save { background: var(--theme-a); color: white; } /* 儲存按鈕使用A組顏色 */
+    .btn-save { background: var(--theme-a); color: white; } 
   </style>
 </head>
 <body>
@@ -311,7 +291,7 @@
       
       <input type="file" id="txt-uploader" accept=".txt" style="display: none;" onchange="window.handleFileUpload(event)">
 
-      <div class="header" onclick="document.getElementById('txt-uploader').click()" title="點擊上傳專屬文本檔">
+      <div class="header">
         <span id="display-title">平安喜樂</span>
         <div class="header-settings-btn" onclick="window.openSettings(); event.stopPropagation();" title="設定">⚙︎</div>
       </div>
@@ -329,7 +309,7 @@
                 <button class="btn-small-today" onclick="window.executeJump()">前往</button>
               </div>
             </div>
-            <button class="btn-small-today" id="btn-today-nav" onclick="window.goToToday()">回到今天</button>
+            <button class="btn-small-today" id="btn-today-nav" onclick="window.goToToday()">回今日</button>
           </div>
           <div>
             <span id="gregorian-year-month">西元----年-月</span>
@@ -370,14 +350,15 @@
 
         <div class="article-container">
           <div class="article-header-btn" id="btn-article-edit" onclick="window.toggleArticleEdit()" title="點擊切換文章編輯模式">
-            日知錄 ✎
+            靜心隨筆 ✎
           </div>
           <div class="footer-wrapper">
-            <div class="footer" id="article-footer" onscroll="window.updateScrollHint()">
-              <div class="footer-info" id="display-footer">文章載入中...</div>
+            <div class="footer" id="article-footer">
+              <div class="reading-view-container" id="reading-scroll-area" onscroll="window.updateScrollHint()">
+                <div class="footer-info" id="display-footer">文章載入中...</div>
+              </div>
               <textarea id="edit-article" style="display: none;"></textarea>
             </div>
-            <div class="scroll-hint" id="scroll-hint-left">◀</div>
           </div>
         </div>
       </div>
@@ -396,7 +377,7 @@
         </div>
         <div class="color-row">
           <input type="color" id="input-theme-b" value="#d81b24">
-          <span>B組 (標題、日知錄)</span>
+          <span>B組 (標題、靜心隨筆)</span>
         </div>
         <div class="color-row">
           <input type="color" id="input-theme-c" value="#2e7d32">
@@ -413,15 +394,45 @@
         <textarea id="input-footer" class="form-control" rows="3"></textarea>
       </div>
 
-      <!-- ★ 更新：鎖定 UID 欄位，強制顯示預設測試 ID，並停用按鈕 -->
       <div class="form-group">
-        <label>您的專屬雲端 ID (目前已鎖定綁定)</label>
+        <label>您的專屬雲端 ID <span id="id-lock-status" style="color: #d81b24; font-size: 14px; font-weight: normal;">(🔒已鎖定)</span></label>
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="display-uid" class="form-control" style="background: #e0e0e0; font-size: 14px; color: #666; flex: 1; cursor: not-allowed;" readonly value="yXJkYmVPRnNIQU01b3gEBc3Lk853">
-          <button style="background: #999; color: white; border: none; border-radius: 6px; padding: 0 15px; font-weight: bold; cursor: not-allowed; font-size: 16px;" disabled>鎖定中</button>
+          <input type="text" id="display-uid" class="form-control" style="background: #e0e0e0; font-size: 14px; color: #666; flex: 1; cursor: not-allowed;" readonly>
+          <button id="btn-id-action" style="background: #999; color: white; border: none; border-radius: 6px; padding: 0 15px; font-weight: bold; cursor: pointer; font-size: 16px; white-space: nowrap;" onclick="window.handleIdAction()">解鎖</button>
+        </div>
+        
+        <div id="unlock-area" style="display: none; gap: 8px; margin-top: 8px;">
+          <input type="password" id="input-pwd" class="form-control" placeholder="請輸入解鎖密碼" style="padding: 8px; font-size: 14px; flex: 1;">
+          <button style="background: var(--theme-a); color: white; border: none; border-radius: 6px; padding: 0 15px; font-weight: bold; cursor: pointer; font-size: 14px; white-space: nowrap;" onclick="window.confirmUnlock()">確認</button>
+        </div>
+
+        <div style="font-size: 12px; color: #666; margin-top: 4px; line-height: 1.4;">
+          ※ 解鎖後可綁定並載入其他雲端 ID，並開放「文本管理」功能。
+        </div>
+      </div>
+
+      <!-- ★ 文本管理：預設隱藏，解鎖後顯示 -->
+      <div class="form-group" id="text-management-area" style="border-top: 1px dashed #ccc; padding-top: 15px; display: none;">
+        <label>文本管理</label>
+        <div style="display: flex; gap: 10px; flex-direction: column;">
+          <button style="width: 100%; background: #ff9800; color: white; border: none; border-radius: 8px; padding: 12px; font-size: 16px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('txt-uploader').click()">📄 從本機上傳文本檔 (.txt)</button>
+          <button style="width: 100%; background: #4caf50; color: white; border: none; border-radius: 8px; padding: 12px; font-size: 16px; font-weight: bold; cursor: pointer;" onclick="window.exportTextData()">📥 輸出文本檔 (.txt)</button>
         </div>
         <div style="font-size: 12px; color: #666; margin-top: 4px; line-height: 1.4;">
-          ※ 開發測試階段，已強制綁定此 ID 讀取與寫入資料。
+          ※ 上傳格式為【標題】-YYYY.M.D.AM-內容，將自動覆寫或附加至該日。<br>
+          ※ 輸出功能將下載目前雲端 ID 內所有的備忘錄與靜心隨筆資料。
+        </div>
+      </div>
+
+      <!-- ★ 新增：密碼變更區塊 (預設隱藏，解鎖後顯示) -->
+      <div class="form-group" id="password-management-area" style="border-top: 1px dashed #ccc; padding-top: 15px; display: none;">
+        <label>修改解鎖密碼</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="input-new-pwd" class="form-control" placeholder="請輸入新密碼" style="padding: 8px; font-size: 14px; flex: 1;">
+          <button style="background: var(--theme-a); color: white; border: none; border-radius: 6px; padding: 0 15px; font-weight: bold; cursor: pointer; font-size: 14px; white-space: nowrap;" onclick="window.changePassword()">更新密碼</button>
+        </div>
+        <div style="font-size: 12px; color: #666; margin-top: 4px; line-height: 1.4;">
+          ※ 更新後將直接儲存至目前的雲端 ID，請務必牢記新密碼。
         </div>
       </div>
 
@@ -451,21 +462,24 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     
-    // ★ 宣告固定的測試 UID
     const FIXED_UID = 'yXJkYmVPRnNIQU01b3gEBc3Lk853';
-    let userId = FIXED_UID; 
+    let userId = localStorage.getItem('custom_user_id') || FIXED_UID; 
 
     let currentDate = new Date();
     let isAnimating = false;
     let isEditingMemo = false; 
     let isEditingArticle = false; 
     
+    // ★ 新增：目前雲端 ID 的解鎖密碼 (預設為 Hdm482xf9890)
+    let currentCloudPassword = "Hdm482xf9890";
+
     let appSettings = { 
       themeA: '#0d47a1', 
       themeB: '#d81b24', 
       themeC: '#2e7d32', 
       title: '平安喜樂', 
-      footer: '無備忘錄' 
+      footer: '無備忘錄',
+      password: currentCloudPassword // ★ 將密碼綁定進入設定檔一併上傳
     };
     let customArticles = {};
     let customMemos = {}; 
@@ -497,6 +511,15 @@
           const cloudSettings = settingsSnap.data();
           if(cloudSettings.themeColor && !cloudSettings.themeB) cloudSettings.themeB = cloudSettings.themeColor;
           appSettings = { ...appSettings, ...cloudSettings }; 
+          
+          // ★ 同步取得該 ID 的專屬密碼，若無則套用預設
+          if (cloudSettings.password) {
+            currentCloudPassword = cloudSettings.password;
+          } else {
+            currentCloudPassword = "Hdm482xf9890";
+            appSettings.password = currentCloudPassword;
+          }
+          
           hasChanges = true; 
         }
         if (articlesSnap.exists()) { customArticles = articlesSnap.data().list || {}; hasChanges = true; }
@@ -525,8 +548,8 @@
       try {
         await Promise.all([
           setDoc(doc(db, "users", userId, "settings", "profile"), appSettings, { merge: true }),
-          setDoc(doc(db, "users", userId, "data", "articles"), { list: customArticles }, { merge: true }),
-          setDoc(doc(db, "users", userId, "data", "memos"), { list: customMemos }, { merge: true })
+          setDoc(doc(db, "users", userId, "data", "articles"), { list: customArticles }),
+          setDoc(doc(db, "users", userId, "data", "memos"), { list: customMemos })
         ]);
         updateSyncStatus('☁️ 已儲存', 2000);
       } catch (error) {
@@ -535,12 +558,11 @@
       }
     }
 
-    // ★ 更新驗證機制：無論取得哪個匿名憑證，都強制將存取路徑覆寫為 FIXED_UID
     setPersistence(auth, browserLocalPersistence)
       .then(() => {
         onAuthStateChanged(auth, (user) => {
           if (user) { 
-            userId = FIXED_UID; // 強制覆寫為指定的測試 ID
+            userId = localStorage.getItem('custom_user_id') || FIXED_UID; 
             const uidEl = document.getElementById('display-uid');
             if(uidEl) uidEl.value = userId; 
             fetchCloudData(); 
@@ -552,10 +574,9 @@
         console.error("設定身分記憶失敗:", error);
       });
 
-    const s2tDict = {'动':'動','开':'開','仓':'倉','纳':'納','财':'財','扫':'掃','买':'買','卖':'賣','网':'網','猎':'獵','结':'結','发':'發','斋':'齋','筑':'築','庙':'廟','门':'门','坟':'墳','旧':'舊','养':'養','医':'醫','药':'藥','疗':'療','产':'產','妇':'婦','虫':'蟲','蚕':'蠶','树':'樹','种':'種','盖':'蓋','复':'復','见':'見','贵':'貴','过':'過','长':'長','马':'馬','车':'車','龙':'龍','凤':'鳳','鸟':'鳥','鸣':'鳴','会':'會','坛':'壇','头':'頭','钻':'鑽','余':'餘','殓':'殮','无':'無','启':'啟','辞':'辭','诸':'諸','罢':'罷','击':'擊','历':'歷','书':'書','报':'報','画':'畫','乐':'樂','务':'務','电':'電','视':'視','脑':'腦','机':'機','关':'關','闭':'閉','设':'設','计':'計','体':'體','惊':'驚','蛰':'蛰','针':'針','护':'護','丧':'喪','归':'歸','宁':'寧','进':'進','万':'萬','寿':'壽','极':'极','毕':'畢','业':'業','汇':'匯','贷':'貸','账':'賬','营':'營','购':'購','献':'獻','宝':'寶','悬':'懸','钟':'鐘','炉':'爐','创':'創','办':'辦','权':'權','证':'證','毁':'毀','断':'斷','积':'積','释':'釋','灵':'靈','醮':'醮','农':'農','栏':'欄','厩':'廄','飞':'飛','鱼':'魚','渔':'漁','亲':'親','绘':'繪','齐':'齊','酬':'酬','合':'合'};
+    const s2tDict = {'动':'動','开':'開','仓':'倉','纳':'納','财':'財','扫':'掃','买':'買','卖':'賣','网':'網','猎':'獵','结':'結','发':'發','斋':'齋','筑':'築','庙':'廟','门':'門','坟':'墳','旧':'舊','养':'養','医':'醫','药':'藥','疗':'療','产':'產','妇':'婦','虫':'蟲','蚕':'蠶','树':'樹','种':'種','盖':'蓋','复':'復','见':'見','贵':'貴','过':'過','长':'長','马':'馬','车':'車','龙':'龍','凤':'鳳','鸟':'鳥','鸣':'鳴','会':'會','坛':'壇','头':'頭','钻':'鑽','余':'餘','殓':'殮','无':'無','启':'啟','辞':'辭','诸':'諸','罢':'罷','击':'擊','历':'歷','书':'書','报':'報','画':'畫','乐':'樂','务':'務','电':'電','视':'視','脑':'腦','机':'機','关':'關','闭':'閉','设':'設','计':'計','体':'體','惊':'驚','蛰':'蛰','针':'針','护':'護','丧':'喪','归':'歸','宁':'寧','进':'進','万':'萬','寿':'壽','极':'极','毕':'畢','业':'業','汇':'匯','贷':'貸','账':'賬','营':'營','购':'購','献':'獻','宝':'寶','悬':'懸','钟':'鐘','炉':'爐','创':'創','办':'辦','权':'權','证':'證','毁':'毁','断':'斷','积':'積','释':'釋','灵':'靈','醮':'醮','农':'農','栏':'欄','厩':'廄','飞':'飛','鱼':'魚','渔':'漁','亲':'親','绘':'繪','齐':'齊','酬':'酬','合':'合'};
     function toTC(str) { return str ? str.split('').map(c => s2tDict[c] || c).join('') : ''; }
 
-    // --- 日期選單 ---
     window.populateDropdowns = function() {
       const yearSel = document.getElementById('jump-year');
       const monthSel = document.getElementById('jump-month');
@@ -607,7 +628,6 @@
       document.getElementById('date-dropdown').classList.remove('show');
     };
 
-    // --- ★ 新增：從目錄跳轉至指定日期 ---
     window.jumpToDiaryDate = function(dateStr) {
       const y = parseInt(dateStr.substring(0, 4), 10);
       const m = parseInt(dateStr.substring(4, 6), 10) - 1;
@@ -615,7 +635,6 @@
       
       currentDate = new Date(y, m, d);
       
-      // 同步更新下拉選單的值
       const yearSel = document.getElementById('jump-year');
       const monthSel = document.getElementById('jump-month');
       const daySel = document.getElementById('jump-day');
@@ -647,7 +666,7 @@
         editEl.value = customMemos[dateKey] !== undefined ? customMemos[dateKey] : appSettings.footer;
         displayEl.style.display = 'none';
         editEl.style.display = 'block';
-        setTimeout(() => window.autoResizeTextarea(editEl), 0); // ★ 觸發文字框自動調整高度
+        setTimeout(() => window.autoResizeTextarea(editEl), 0); 
         editEl.focus();
         isEditingMemo = true;
       } else {
@@ -663,17 +682,14 @@
       }
     };
 
-    // ★ 修改：進入編輯時載入完整內容，存檔時將第一行作為標題
     window.toggleArticleEdit = function() {
       const dateKey = getDateKey(currentDate);
       const displayEl = document.getElementById('display-footer');
       const editEl = document.getElementById('edit-article');
-      const footerContainer = document.getElementById('article-footer');
+      const scrollArea = document.getElementById('reading-scroll-area'); 
       const btnEl = document.getElementById('btn-article-edit');
-      const hintEl = document.getElementById('scroll-hint-left');
 
       if (!isEditingArticle) {
-        // 將原本的標題與內文重新組合供使用者編輯
         let currentContent = "";
         if (customArticles[dateKey]) { 
           currentContent = customArticles[dateKey].title;
@@ -683,13 +699,11 @@
         }
         
         editEl.value = currentContent;
-        displayEl.style.display = 'none';
+        scrollArea.style.display = 'none'; 
         editEl.style.display = 'block';
-        setTimeout(() => window.autoResizeTextarea(editEl), 0); // ★ 觸發文字框自動調整高度
+        setTimeout(() => window.autoResizeTextarea(editEl), 0); 
         
-        hintEl.style.display = 'none'; 
-        
-        btnEl.innerText = '💾 儲存日知錄';
+        btnEl.innerText = '💾 儲存靜心隨筆';
         editEl.focus();
         isEditingArticle = true;
       } else {
@@ -697,7 +711,6 @@
         if (val === '') { 
           delete customArticles[dateKey]; 
         } else {
-          // 以斷行切割，第一行當作標題，剩餘當作內文
           const lines = val.split('\n');
           customArticles[dateKey] = { 
             title: lines[0].trim(), 
@@ -708,18 +721,15 @@
         saveToCloud();
         
         editEl.style.display = 'none';
-        displayEl.style.display = 'block';
+        scrollArea.style.display = 'block'; 
         
-        hintEl.style.display = 'flex';
-        
-        btnEl.innerText = '日知錄 ✎';
+        btnEl.innerText = '靜心隨筆 ✎';
         isEditingArticle = false;
         
         renderCalendar(currentDate); 
       }
     };
 
-    // --- ★ 新增：Textarea 自動調整高度邏輯 ---
     window.autoResizeTextarea = function(el) {
       el.style.height = 'auto';
       el.style.height = el.scrollHeight + 'px';
@@ -792,7 +802,7 @@
     function parseTextData(text, fileName) {
       const regex = /【([^】]+)】-(\d{4})\.(\d{1,2})\.(\d{1,2})\.([A-Za-z]{2})-([\s\S]*?)(?=(?:【|$))/g;
       let match, count = 0;
-      let touchedDates = new Set(); // ★ 新增：用來記錄這次上傳已經處理過的日期
+      let touchedDates = new Set(); 
 
       while ((match = regex.exec(text)) !== null) {
         const title = match[1].trim(), year = match[2];
@@ -800,13 +810,10 @@
         const timeOfDay = match[5].toUpperCase(), content = match[6].trim();
         const dateStr = `${year}${month}${day}`; 
         
-        // ★ 修改邏輯：選項 A (遇到重複日期直接覆蓋替換)
         if (!touchedDates.has(dateStr)) {
-          // 這次上傳「初次」遇到該日期：直接建立/覆蓋，抹除雲端原有的舊資料
           customArticles[dateStr] = { title, content };
           touchedDates.add(dateStr);
         } else {
-          // 這次上傳「再次」遇到該日期（例如同一天的 PM 內容）：將文字附加在下方
           customArticles[dateStr].content += `\n\n[${timeOfDay}]\n${content}`; 
         }
         count++;
@@ -823,18 +830,82 @@
       }
     }
 
-    window.updateScrollHint = function() {
-      const container = document.getElementById('article-footer');
-      const hint = document.getElementById('scroll-hint-left');
-      const content = document.getElementById('display-footer');
-      if (isEditingArticle) return; 
+    // --- ★ 新增：輸出文本檔功能 ---
+    window.exportTextData = function() {
+      // 取出所有有備忘錄或文章的日期
+      const allKeys = new Set([...Object.keys(customArticles), ...Object.keys(customMemos)]);
+      
+      if (allKeys.size === 0) {
+        alert("目前沒有任何備忘錄或靜心隨筆紀錄可以輸出喔！");
+        return;
+      }
 
-      if (container.scrollWidth > container.clientWidth + 5) {
-        const containerRect = container.getBoundingClientRect();
-        const contentRect = content.getBoundingClientRect();
-        if (contentRect.left >= containerRect.left - 5) { hint.style.opacity = '0'; } 
-        else { hint.style.opacity = '1'; }
-      } else { hint.style.opacity = '0'; }
+      // 依照日期由舊到新排序
+      const sortedKeys = Array.from(allKeys).sort((a, b) => a.localeCompare(b));
+      let exportContent = "";
+
+      sortedKeys.forEach(k => {
+        // 解析 YYYY.M.D
+        const y = k.substring(0, 4);
+        const m = parseInt(k.substring(4, 6), 10);
+        const d = parseInt(k.substring(6, 8), 10);
+        
+        // 取得備忘錄與文章內容 (遇缺留白)
+        const memoText = customMemos[k] ? customMemos[k] : "";
+        let articleText = "";
+        if (customArticles[k]) {
+          articleText = `【${customArticles[k].title}】`;
+          if (customArticles[k].content) {
+            articleText += `\n${customArticles[k].content}`;
+          }
+        }
+
+        // 寫入指定格式
+        exportContent += `日期：${y}.${m}.${d}\n`;
+        exportContent += `備忘錄：\n${memoText}\n`;
+        exportContent += `文章：\n${articleText}\n\n`;
+        exportContent += `----------------------------------------\n\n`;
+      });
+
+      // ★ 在輸出文本的最末尾加入帳號與密碼資訊
+      exportContent += `========================================\n`;
+      exportContent += `【雲端備份與安全資訊】\n`;
+      exportContent += `專屬雲端 ID：${userId}\n`;
+      exportContent += `解鎖密碼：${currentCloudPassword}\n`;
+      exportContent += `========================================\n`;
+
+      // 觸發下載
+      const blob = new Blob([exportContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${appSettings.title}_備份文本.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
+    window.updateScrollHint = function() {
+      const container = document.getElementById('reading-scroll-area');
+      if (!container || isEditingArticle) return; 
+
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      
+      if (maxScroll <= 5) {
+        container.setAttribute('data-scroll-state', 'none');
+        return;
+      }
+
+      const currentScroll = Math.abs(container.scrollLeft);
+
+      if (currentScroll <= 5) {
+        container.setAttribute('data-scroll-state', 'start');
+      } else if (currentScroll >= maxScroll - 5) {
+        container.setAttribute('data-scroll-state', 'end');
+      } else {
+        container.setAttribute('data-scroll-state', 'middle');
+      }
     };
 
     function init() {
@@ -854,7 +925,6 @@
       const savedMemos = localStorage.getItem('calendarMemos');
       if (savedMemos) customMemos = JSON.parse(savedMemos);
 
-      // ★ 初始化：綁定文字框輸入時的動態高度調整事件
       const editArticleEl = document.getElementById('edit-article');
       const editMemoEl = document.getElementById('edit-memo');
       if (editArticleEl) editArticleEl.addEventListener('input', function() { window.autoResizeTextarea(this); });
@@ -871,7 +941,7 @@
 
       const todayDate = new Date();
       const isToday = (year === todayDate.getFullYear() && month === (todayDate.getMonth() + 1) && date === todayDate.getDate());
-      document.getElementById('btn-today-nav').style.display = isToday ? 'none' : 'block';
+      document.getElementById('btn-today-nav').style.display = isToday ? 'none' : 'flex';
 
       document.getElementById('roc-year').innerText = `民國${year - 1911}年 ▾`;
       document.getElementById('gregorian-year-month').innerText = `西元${year}年${month}月`;
@@ -897,7 +967,6 @@
       const footerEl = document.getElementById('display-footer');
       const footerContainer = document.getElementById('article-footer');
 
-      // ★ 修改：日知錄遇缺補目錄 (文美文集)
       if (customArticles[dateKey]) {
         let text = `【${customArticles[dateKey].title}】`;
         if (customArticles[dateKey].content) {
@@ -905,35 +974,30 @@
         }
         footerEl.innerText = text;
       } else {
-        // 抓取所有雲端文章的金鑰並由新到舊排序
         const articleKeys = Object.keys(customArticles).sort((a, b) => b.localeCompare(a));
         
         if (articleKeys.length > 0) {
-          let tocHTML = `《靜心隨筆，日新又新》\n\n`;
+          let tocHTML = `《 文美文集 》目錄\n\n`;
           let items = articleKeys.map(k => {
             const y = k.substring(0, 4);
             const m = parseInt(k.substring(4, 6), 10);
             const d = parseInt(k.substring(6, 8), 10);
             const title = customArticles[k].title || '無標題';
-            // 替換危險字元，確保插入 HTML 的安全性
             const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            
-            // 使用帶有虛線的 span 來做成可點擊的目錄條目
             return `<span class="toc-item" onclick="window.jumpToDiaryDate('${k}')">【${safeTitle}】${y}.${m}.${d}</span>`;
           });
           tocHTML += items.join('\n');
-          // 使用 innerHTML 以渲染 span 標籤，\n 會被外層的 white-space: pre-wrap 正常解析成換行
           footerEl.innerHTML = tocHTML;
         } else {
-          footerEl.innerText = "《 文美文集 》\n\n目前尚無日知錄。\n點擊上方「日知錄 ✎」開始您的第一篇創作吧！";
+          footerEl.innerText = "徵文\n\n點擊上方「靜心隨筆 ✎」開始您的第一篇創作吧！";
         }
       }
 
       if (!isEditingArticle) {
         requestAnimationFrame(() => {
-          footerContainer.scrollLeft = footerContainer.scrollWidth;
-          if(footerContainer.scrollLeft === 0 && footerContainer.scrollWidth > footerContainer.clientWidth) {
-            footerContainer.scrollLeft = 0; 
+          const scrollArea = document.getElementById('reading-scroll-area');
+          if (scrollArea) {
+            scrollArea.scrollLeft = 0; 
           }
           setTimeout(window.updateScrollHint, 50); 
         });
@@ -948,11 +1012,122 @@
       document.getElementById('input-theme-b').value = appSettings.themeB || '#d81b24';
       document.getElementById('input-theme-c').value = appSettings.themeC || '#2e7d32';
       
+      // ★ 判斷是否顯示進階管理區域 (包含文本與密碼設定)
+      document.getElementById('text-management-area').style.display = isIdLocked ? 'none' : 'block';
+      document.getElementById('password-management-area').style.display = isIdLocked ? 'none' : 'block';
+      
       document.getElementById('settings-modal').classList.add('show');
     };
     
     window.closeSettings = function() { document.getElementById('settings-modal').classList.remove('show'); };
     
+    let isIdLocked = true;
+    // ★ 移除常數 PWD_UNLOCK，改由 currentCloudPassword 動態判定
+
+    window.handleIdAction = function() {
+      const uidEl = document.getElementById('display-uid');
+      const btnEl = document.getElementById('btn-id-action');
+      const statusEl = document.getElementById('id-lock-status');
+      const unlockArea = document.getElementById('unlock-area');
+      const textManageArea = document.getElementById('text-management-area'); 
+      const pwdManageArea = document.getElementById('password-management-area'); // ★
+
+      if (isIdLocked) {
+        unlockArea.style.display = unlockArea.style.display === 'flex' ? 'none' : 'flex';
+      } else {
+        const newId = uidEl.value.trim();
+        if (!newId) {
+          alert("雲端 ID 不能為空！");
+          uidEl.value = userId; 
+          return;
+        }
+        
+        userId = newId;
+        localStorage.setItem('custom_user_id', userId);
+        
+        isIdLocked = true;
+        uidEl.readOnly = true;
+        uidEl.style.background = "#e0e0e0";
+        uidEl.style.cursor = "not-allowed";
+        uidEl.style.color = "#666";
+        btnEl.innerText = "解鎖";
+        btnEl.style.background = "#999";
+        statusEl.innerText = "(🔒已鎖定)";
+        statusEl.style.color = "#d81b24";
+        
+        // ★ 鎖定後隱藏進階管理區
+        textManageArea.style.display = 'none';
+        pwdManageArea.style.display = 'none';
+        
+        alert("✅ 已成功鎖定雲端 ID！正在為您載入專屬資料...");
+        
+        appSettings = { themeA: '#0d47a1', themeB: '#d81b24', themeC: '#2e7d32', title: '平安喜樂', footer: '無備忘錄', password: 'Hdm482xf9890' };
+        currentCloudPassword = 'Hdm482xf9890';
+        customArticles = {};
+        customMemos = {};
+        localStorage.removeItem('calendarSettings');
+        localStorage.removeItem('calendarArticles');
+        localStorage.removeItem('calendarMemos');
+        
+        applySettings();
+        fetchCloudData();
+        window.closeSettings();
+      }
+    };
+
+    window.confirmUnlock = function() {
+      const pwdInput = document.getElementById('input-pwd');
+      const uidEl = document.getElementById('display-uid');
+      const btnEl = document.getElementById('btn-id-action');
+      const statusEl = document.getElementById('id-lock-status');
+      const unlockArea = document.getElementById('unlock-area');
+      const textManageArea = document.getElementById('text-management-area'); 
+      const pwdManageArea = document.getElementById('password-management-area'); // ★
+
+      // ★ 驗證目前 ID 專屬的動態密碼
+      if (pwdInput.value === currentCloudPassword) {
+        isIdLocked = false;
+        uidEl.readOnly = false;
+        uidEl.style.background = "#fff";
+        uidEl.style.cursor = "text";
+        uidEl.style.color = "#333";
+        btnEl.innerText = "載入並鎖定";
+        btnEl.style.background = "var(--theme-a)";
+        statusEl.innerText = "(🔓已解鎖)";
+        statusEl.style.color = "green";
+        
+        unlockArea.style.display = 'none'; 
+        pwdInput.value = ''; 
+        
+        // ★ 解鎖成功後，顯示進階管理區域
+        textManageArea.style.display = 'block';
+        pwdManageArea.style.display = 'block';
+        
+      } else {
+        alert("密碼錯誤！無法解鎖。");
+        pwdInput.value = ''; 
+      }
+    };
+
+    // --- ★ 新增：提交變更密碼功能 ---
+    window.changePassword = function() {
+      const newPwdInput = document.getElementById('input-new-pwd');
+      const newPwd = newPwdInput.value.trim();
+      
+      if (!newPwd) {
+        alert("新密碼不能為空！");
+        return;
+      }
+      
+      currentCloudPassword = newPwd;
+      appSettings.password = newPwd; // 同步至設定物件
+      
+      saveToCloud(); // 將包含新密碼的設定檔上傳至 Firestore 該 ID 之下
+      
+      alert("✅ 密碼修改成功！未來解鎖請使用此新密碼。");
+      newPwdInput.value = '';
+    };
+
     window.saveSettings = function() {
       appSettings.title = document.getElementById('input-title').value || '平安喜樂';
       appSettings.footer = document.getElementById('input-footer').value || '無備忘錄';
