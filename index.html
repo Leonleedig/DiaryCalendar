@@ -161,9 +161,9 @@
     .memo-content {
       padding: 10px; flex: 2; display: flex; align-items: center; position: relative;
     }
-    .memo-content div { font-size: 18px; font-weight: bold; color: #333; line-height: 1.5; white-space: pre-wrap; width: 100%; } 
+    .memo-content div { font-size: 16px; font-weight: bold; color: var(--theme-a); line-height: 1.5; white-space: pre-wrap; width: 100%; } 
     .memo-content textarea {
-      width: 100%; font-size: 16px; border: 1px solid var(--theme-a); 
+      width: 100%; font-size: 16px; font-weight: bold; color: var(--theme-a); border: 1px solid var(--theme-a); 
       border-radius: 4px; padding: 5px; resize: none; font-family: inherit;
       overflow: hidden; 
     }
@@ -183,14 +183,23 @@
     .article-container {
       display: flex; flex-direction: column; flex: 1; min-height: 0; margin-bottom: 5px;
     }
+    .article-header-bar {
+      background-color: var(--theme-b); border-radius: 6px 6px 0 0;
+      display: flex; position: relative; z-index: 1; align-items: center;
+      flex-shrink: 0;
+    }
     .article-header-btn {
-      background-color: var(--theme-b); color: white;
-      text-align: center; padding: 6px 10px; font-size: 16px; font-weight: bold;
-      letter-spacing: 2px; cursor: pointer; border-radius: 6px 6px 0 0;
-      flex-shrink: 0; transition: opacity 0.2s; position: relative; z-index: 1; 
+      color: white; flex: 1; text-align: center; padding: 6px 10px; font-size: 16px; font-weight: bold;
+      letter-spacing: 2px; cursor: pointer; transition: opacity 0.2s; 
       display: flex; justify-content: center; align-items: center;
     }
     .article-header-btn:active { opacity: 0.8; }
+    .article-today-btn {
+      position: absolute; right: 8px; color: white; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      padding: 4px; opacity: 0.85; transition: opacity 0.2s;
+    }
+    .article-today-btn:active { opacity: 0.5; }
 
     .footer-wrapper { position: relative; flex: 1; display: block; min-height: 0; width: 100%; z-index: 2; }
     
@@ -364,8 +373,14 @@
           </div>
 
           <div class="article-container">
-            <div class="article-header-btn" id="btn-article-edit" onclick="window.toggleArticleEdit()" title="點擊切換文章編輯模式">
-              靜心隨筆 <span class="material-symbols-outlined" style="font-size: 18px; margin-left: 6px;">edit</span>
+            <div class="article-header-bar">
+              <div class="article-header-btn" id="btn-article-edit" onclick="window.toggleArticleEdit()" title="點擊切換文章編輯模式">
+                靜心隨筆 <span class="material-symbols-outlined" style="font-size: 18px; margin-left: 6px;">edit</span>
+              </div>
+              <div class="article-today-btn" id="btn-article-today" onclick="window.goToToday(); event.stopPropagation();" title="回今日">
+                <span style="font-size: 14px; font-weight: bold; letter-spacing: 1px; margin-right: 4px;">回今日</span>
+                <span class="material-symbols-outlined" style="font-size: 20px;">today</span>
+              </div>
             </div>
             <div class="footer-wrapper">
               <div class="footer" id="article-footer">
@@ -742,8 +757,13 @@
       if (!isEditingArticle) {
         let currentContent = "";
         if (customArticles[dateKey]) { 
-          currentContent = customArticles[dateKey].title;
-          if (customArticles[dateKey].content) { currentContent += '\n' + customArticles[dateKey].content; }
+          // ★ 修改：讀取時判斷有無獨立標題
+          if (customArticles[dateKey].title) {
+            currentContent = customArticles[dateKey].title;
+            if (customArticles[dateKey].content) { currentContent += '\n' + customArticles[dateKey].content; }
+          } else {
+            currentContent = customArticles[dateKey].content || "";
+          }
         }
         
         editEl.value = currentContent;
@@ -760,7 +780,32 @@
           delete customArticles[dateKey]; 
         } else {
           const lines = val.split('\n');
-          customArticles[dateKey] = { title: lines[0].trim(), content: lines.slice(1).join('\n').trim() };
+          // ★ 修改：跳過開頭空白行，尋找第一行文字
+          let firstNonEmptyIdx = -1;
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].trim().length > 0) {
+              firstNonEmptyIdx = i;
+              break;
+            }
+          }
+          
+          if (firstNonEmptyIdx !== -1) {
+            const firstLine = lines[firstNonEmptyIdx].trim();
+            // 判斷第一行是否超過 20 字元
+            if (firstLine.length <= 20) {
+              customArticles[dateKey] = { 
+                title: firstLine, 
+                content: lines.slice(firstNonEmptyIdx + 1).join('\n').trim() 
+              };
+            } else {
+              customArticles[dateKey] = { 
+                title: "", // 空標題代表無標題文章
+                content: lines.slice(firstNonEmptyIdx).join('\n').trim() 
+              };
+            }
+          } else {
+            delete customArticles[dateKey];
+          }
         }
         
         saveToCloud();
@@ -1071,6 +1116,9 @@
       const btnTodayNav = el('btn-today-nav');
       if (btnTodayNav) btnTodayNav.style.display = isToday ? 'none' : 'flex';
 
+      const btnArticleToday = el('btn-article-today');
+      if (btnArticleToday) btnArticleToday.style.display = isToday ? 'none' : 'flex';
+
       const rocYearEl = el('roc-year');
       if(rocYearEl) rocYearEl.innerText = `民國${year - 1911}年 ▾`;
       
@@ -1111,8 +1159,14 @@
       const footerEl = el('display-footer');
       if (footerEl) {
         if (customArticles[dateKey]) {
-          let text = `【${customArticles[dateKey].title}】`;
-          if (customArticles[dateKey].content) { text += `\n\n${customArticles[dateKey].content}`; }
+          let text = "";
+          // ★ 修改：顯示時判斷有無獨立標題
+          if (customArticles[dateKey].title) {
+            text = `【${customArticles[dateKey].title}】`;
+            if (customArticles[dateKey].content) { text += `\n\n${customArticles[dateKey].content}`; }
+          } else {
+            text = customArticles[dateKey].content || "";
+          }
           footerEl.innerText = formatTextForDisplay(text, 30);
         } else {
           const articleKeys = Object.keys(customArticles).sort((a, b) => b.localeCompare(a));
@@ -1120,7 +1174,17 @@
             let tocHTML = `《 靜心隨筆 》目錄\n\n`;
             let items = articleKeys.map(k => {
               const y = k.substring(0, 4), m = parseInt(k.substring(4, 6), 10), d = parseInt(k.substring(6, 8), 10);
-              const title = customArticles[k].title || '無標題';
+              
+              // ★ 修改：目錄顯示時，若無標題則擷取內文前10字，並過濾括號
+              let title = customArticles[k].title;
+              if (!title) {
+                const content = customArticles[k].content || '';
+                const firstLine = content.split('\n').find(l => l.trim().length > 0) || '';
+                title = firstLine.replace(/[【】]/g, '').substring(0, 10);
+                if (firstLine.replace(/[【】]/g, '').length > 10) title += '...';
+              }
+              title = title || '無標題';
+              
               const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
               return `<span class="toc-item" onclick="window.jumpToDiaryDate('${k}')">【${safeTitle}】${y}.${m}.${d}</span>`;
             });
