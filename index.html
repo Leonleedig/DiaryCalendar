@@ -10,8 +10,11 @@
   
   <!-- 引入 Material Icons & Symbols -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lunar-javascript/1.6.12/lunar.min.js"></script>
+  <!-- ★ 引入 html2canvas 截圖引擎 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   
   <style>
     :root {
@@ -61,6 +64,12 @@
       font-weight: bold; letter-spacing: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.4); 
       border-bottom: 3px solid rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; 
       position: relative; z-index: 10; flex-shrink: 0; 
+    }
+    
+    /* ★ 新增：左側標題列面板 (供截圖按鈕使用) */
+    .header-left-panel {
+      position: absolute; top: 15px; left: 15px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
     }
     
     .header-side-panel {
@@ -155,17 +164,50 @@
       font-weight: bold; display: flex; align-items: center; justify-content: center;
       writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 2px; font-size: 16px;
       cursor: pointer; transition: background-color 0.2s;
+      position: relative; z-index: 1; /* ★ 確保層級，作為底層 */
     }
     .memo-title:active { opacity: 0.8; }
     
+    /* ★ 修改：備忘錄內容區移除上下 padding，讓捲軸軌道貼齊虛線，並改為 stretch 填滿高度 */
     .memo-content {
-      padding: 10px; flex: 2; display: flex; align-items: center; position: relative;
+      padding: 0 5px 0 0; flex: 2; display: flex; align-items: stretch; position: relative;
     }
-    .memo-content div { font-size: 16px; font-weight: bold; color: var(--theme-a); line-height: 1.5; white-space: pre-wrap; width: 100%; } 
-    .memo-content textarea {
-      width: 100%; font-size: 16px; font-weight: bold; color: var(--theme-a); border: 1px solid var(--theme-a); 
-      border-radius: 4px; padding: 5px; resize: none; font-family: inherit;
-      overflow: hidden; 
+    .memo-scroll-wrapper {
+      direction: rtl; /* 讓捲軸出現在左側（標題與文字之間） */
+      height: 100%; max-height: 116px; /* 剛好容納 4 行文字 (96px) + 上下留白 (20px) */
+      overflow-y: auto; 
+      width: calc(100% + 6px); padding-left: 14px; margin-left: -6px; /* ★ 讓捲軸向左偏移 6px (交疊一半)，並以數學補償維持文字區不動 */
+      position: relative; z-index: 2; /* ★ 覆蓋於標題列上方 */
+      --svg-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='white'%3E%3Cpolygon points='4,16 12,6 20,16'/%3E%3C/svg%3E");
+      --svg-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='white'%3E%3Cpolygon points='4,8 12,18 20,8'/%3E%3C/svg%3E");
+    }
+    .memo-scroll-wrapper::-webkit-scrollbar { width: 12px; }
+    .memo-scroll-wrapper::-webkit-scrollbar-thumb {
+      background-color: var(--theme-a); border-radius: 6px; background-repeat: no-repeat;
+    }
+    .memo-scroll-wrapper::-webkit-scrollbar-track { background: transparent; border: none; box-shadow: none; }
+    
+    /* ★ 修正：滑塊在頂部(start)時，顯示下方 ▼ 指引；在底部(end)時，顯示上方 ▲ 指引 */
+    .memo-scroll-wrapper[data-scroll-state="start"]::-webkit-scrollbar-thumb {
+      background-image: var(--svg-down); background-position: center bottom 4px;
+    }
+    .memo-scroll-wrapper[data-scroll-state="end"]::-webkit-scrollbar-thumb {
+      background-image: var(--svg-up); background-position: center top 4px;
+    }
+    .memo-scroll-wrapper[data-scroll-state="middle"]::-webkit-scrollbar-thumb {
+      background-image: var(--svg-up), var(--svg-down); background-position: center top 4px, center bottom 4px;
+    }
+    
+    /* ★ 修改：將上下留白移至文字內部，使文字本身保持視覺位置不變，但捲軸軌道延伸 */
+    .memo-scroll-inner {
+      direction: ltr; text-align: left; width: 100%; 
+      font-size: 16px; font-weight: bold; color: var(--theme-a); line-height: 1.5;
+    }
+    div.memo-scroll-inner { white-space: pre-wrap; padding: 10px 0; min-height: 116px; box-sizing: border-box; }
+    textarea.memo-scroll-inner {
+      border: none; background: transparent; outline: none; 
+      border-radius: 0; padding: 10px 0; resize: none; font-family: inherit;
+      overflow-y: hidden; min-height: 116px; box-sizing: border-box;
     }
 
     .memo-almanac {
@@ -210,15 +252,27 @@
       width: 100%; max-width: 100%; overflow: visible; min-height: 250px; 
     }
     
+    /* ★ 修改：文章區彈性排版，讓標題固定在右側並確保滑動區與標題分離 */
+    .footer-inner-flex {
+      display: flex; flex-direction: row-reverse; width: 100%; height: 100%;
+    }
+    .fixed-title {
+      writing-mode: vertical-rl; text-orientation: upright;
+      padding: 15px 15px 15px 10px; font-size: 18px; line-height: 2; font-weight: bold;
+      border-left: 1px dashed var(--theme-b); flex-shrink: 0; white-space: pre-wrap;
+      display: none; 
+    }
+
     .reading-view-container {
       width: 100%; max-width: 100%; overflow-x: auto; overflow-y: hidden;
       transform: rotateX(180deg); direction: rtl; display: block; margin-top: -6px; 
-      --svg-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='11 17 6 12 11 7'/%3E%3Cpolyline points='18 17 13 12 18 7'/%3E%3C/svg%3E");
-      --svg-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='13 17 18 12 13 7'/%3E%3Cpolyline points='6 17 11 12 6 7'/%3E%3C/svg%3E");
+      flex: 1; min-width: 0; /* ★ 配合 Flexbox */
+      --svg-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='white'%3E%3Cpolygon points='16,4 6,12 16,20'/%3E%3C/svg%3E");
+      --svg-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='white'%3E%3Cpolygon points='8,4 18,12 8,20'/%3E%3C/svg%3E");
     }
     .reading-view-container::-webkit-scrollbar { height: 12px; } 
     .reading-view-container::-webkit-scrollbar-thumb { 
-      background-color: var(--theme-b); border-radius: 6px; border: 2px solid #fff; background-repeat: no-repeat;
+      background-color: var(--theme-b); border-radius: 6px; background-repeat: no-repeat;
     }
     .reading-view-container[data-scroll-state="start"]::-webkit-scrollbar-thumb {
       background-image: var(--svg-left); background-position: left 4px center;
@@ -282,12 +336,55 @@
     .color-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
     .color-row input[type="color"] { width: 45px; height: 45px; padding: 0; border: 2px solid #ccc; border-radius: 8px; cursor: pointer; }
     .color-row input[type="color"]:disabled { opacity: 0.5; cursor: not-allowed; border-color: #999; }
-    .color-row span { font-size: 16px; font-weight: bold; color: #333; }
+    .divider-text span {
+      background: #fff; padding: 0 15px; color: #888; font-size: 14px; position: relative; z-index: 2;
+    }
 
-    .modal-actions { display: flex; gap: 10px; margin-top: 25px; }
-    .modal-btn { flex: 1; padding: 15px; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-family: sans-serif; display: flex; justify-content: center; align-items: center; gap: 6px; }
-    .btn-cancel { background: #e0e0e0; color: #333; }
-    .btn-save { background: var(--theme-a); color: white; } 
+    /* =========================================
+       ★ 截圖專屬模式 (.export-mode) 
+       將捲軸直書排版強制轉換為無邊界橫書排版
+       ========================================= */
+    .export-mode .header-icon-btn,
+    .export-mode .article-today-btn,
+    .export-mode .btn-small-today,
+    .export-mode .memo-title .material-symbols-outlined,
+    .export-mode .article-header-btn .material-symbols-outlined,
+    .export-mode .sync-status,
+    .export-mode .dropdown-arrow { display: none !important; }
+    
+    .export-mode #roc-year { border-bottom: none !important; }
+    .export-mode .toc-item { text-decoration: none !important; }
+
+    /* 解除所有 Flex 限制，改為自然區塊高度 */
+    .export-mode,
+    .export-mode .paper-stack,
+    .export-mode .paper,
+    .export-mode .article-container,
+    .export-mode .footer-wrapper,
+    .export-mode .footer,
+    .export-mode .footer-inner-flex,
+    .export-mode .reading-view-container {
+      display: block !important; height: auto !important; min-height: 0 !important; flex: none !important;
+    }
+
+    /* 備忘錄橫排適應 (包含宜忌順序對調) */
+    .export-mode .memo-box { flex-direction: column !important; min-height: auto !important; display: flex !important; }
+    .export-mode .memo-title { order: 1; writing-mode: horizontal-tb !important; width: 100% !important; padding: 6px !important; letter-spacing: 4px !important; }
+    .export-mode .memo-almanac { order: 2; border-left: none !important; border-top: none !important; border-bottom: 2px dashed var(--theme-c) !important; flex-direction: row !important; flex-wrap: wrap !important; justify-content: space-around !important; padding: 12px 10px !important; }
+    .export-mode .memo-content { order: 3; padding: 15px 10px !important; display: block !important; }
+    .export-mode .memo-scroll-wrapper { width: 100% !important; padding: 0 !important; margin: 0 !important; max-height: none !important; overflow: visible !important; direction: ltr !important; }
+    .export-mode .memo-scroll-inner { padding: 0 !important; min-height: auto !important; }
+
+    /* 文章橫排適應 */
+    .export-mode .fixed-title { writing-mode: horizontal-tb !important; border-left: none !important; border-bottom: 1px dashed var(--theme-b) !important; padding: 12px !important; text-align: center !important; }
+    .export-mode .reading-view-container { direction: ltr !important; transform: none !important; overflow: visible !important; }
+    .export-mode .footer-info { writing-mode: horizontal-tb !important; transform: none !important; min-height: auto !important; padding: 15px 10px !important; text-align: left !important; line-height: 1.5 !important; }
+    
+    /* 隱藏編輯框與捲軸 */
+    .export-mode textarea, .export-mode *::-webkit-scrollbar { display: none !important; }
+    
+    /* 顯示浮水印 */
+    .export-mode #export-watermark { display: block !important; }
 
   </style>
 </head>
@@ -305,6 +402,13 @@
       <input type="file" id="txt-uploader" accept=".txt" style="display: none;" onchange="window.handleFileUpload(event)">
 
       <div class="header">
+        <!-- ★ 新增：左側截圖按鈕 -->
+        <div class="header-left-panel">
+          <div class="header-icon-btn" onclick="window.generateScreenshot(); event.stopPropagation();" title="產生分享圖">
+            <span class="material-icons" style="font-size: 26px;">screenshot</span>
+          </div>
+        </div>
+
         <span id="display-title">平安喜樂</span>
         <div class="header-side-panel">
           <div class="header-icon-btn" onclick="window.openSettings(); event.stopPropagation();" title="設定">&#x2699;&#xFE0E;</div>
@@ -363,8 +467,11 @@
               備忘錄 <span class="material-symbols-outlined" style="font-size: 16px; margin-top: 4px;">edit</span>
             </div>
             <div class="memo-content">
-              <div id="display-memo"></div>
-              <textarea id="edit-memo" style="display: none;"></textarea>
+              <!-- ★ 修改：增加專屬的捲軸外掛容器 -->
+              <div class="memo-scroll-wrapper" id="memo-scroll-area" onscroll="window.updateMemoScrollHint(this)">
+                <div id="display-memo" class="memo-scroll-inner"></div>
+                <textarea id="edit-memo" class="memo-scroll-inner" style="display: none;"></textarea>
+              </div>
             </div>
             <div class="memo-almanac">
               <div class="h-almanac-item"><span class="h-icon icon-yi">宜</span> <span id="almanac-yi" class="h-text">加載中</span></div>
@@ -384,15 +491,35 @@
             </div>
             <div class="footer-wrapper">
               <div class="footer" id="article-footer">
-                <div class="reading-view-container" id="reading-scroll-area" onscroll="window.updateScrollHint()">
-                  <div class="footer-info" id="display-footer">文章載入中...</div>
+                <div class="footer-inner-flex" id="article-display-area">
+                  <div class="fixed-title" id="display-fixed-title"></div>
+                  <div class="reading-view-container" id="reading-scroll-area" onscroll="window.updateScrollHint()">
+                    <div class="footer-info" id="display-footer">文章載入中...</div>
+                  </div>
                 </div>
                 <textarea id="edit-article" style="display: none;"></textarea>
               </div>
             </div>
           </div>
+          
+          <!-- ★ 新增：截圖專用浮水印 (預設隱藏) -->
+          <div id="export-watermark" style="display: none; text-align: center; color: var(--theme-b); opacity: 0.4; font-size: 14px; font-weight: bold; margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.1); letter-spacing: 2px;">
+            電子老黃曆．記錄生活點滴
+          </div>
+          
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ★ 新增：圖片預覽彈窗 -->
+  <div class="modal-overlay" id="preview-modal" style="z-index: 3000; background: rgba(0,0,0,0.85);" onclick="if(event.target===this) this.classList.remove('show')">
+    <div class="modal-content" style="background: transparent; box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 10px; width: 100%;">
+      <img id="preview-image" src="" alt="預覽圖" style="max-width: 100%; max-height: 65vh; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); object-fit: contain;">
+      <div id="preview-actions" style="width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 8px;">
+         <!-- 按鈕由 JS 動態生成 -->
+      </div>
+      <button class="modal-btn" style="background: rgba(255,255,255,0.2); color: white; width: 100%; max-width: 320px; margin-top: 5px; font-size: 16px;" onclick="document.getElementById('preview-modal').classList.remove('show')">關閉預覽</button>
     </div>
   </div>
 
@@ -551,6 +678,119 @@
       }
       return resultLines.join('\n');
     }
+
+    // ==========================================
+    // ★ 新增：截圖生成與分享引擎
+    // ==========================================
+    window.generateScreenshot = async function() {
+      if (isAnimating) return;
+      window.forceSaveEdits(); // 確保文字已儲存
+
+      const card = document.getElementById('calendar-card');
+      const originalScrollPos = window.scrollY;
+      
+      updateSyncStatus('📸 圖片生成中...', 0);
+      
+      // 套用截圖排版模式
+      card.classList.add('export-mode');
+      
+      // 等待瀏覽器重新計算無邊界排版
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      try {
+        const canvas = await html2canvas(card, {
+          scale: 2, // 提高解析度
+          useCORS: true,
+          backgroundColor: '#fdfdfd' // 確保背景為紙張色
+        });
+        
+        const imgDataUrl = canvas.toDataURL('image/png');
+        
+        // 極速復原排版
+        card.classList.remove('export-mode');
+        window.scrollTo(0, originalScrollPos);
+        updateSyncStatus('✅ 圖片已生成', 2000);
+        
+        // 顯示預覽與系統分流導引
+        showPreviewModal(imgDataUrl);
+        
+      } catch (err) {
+        console.error(err);
+        card.classList.remove('export-mode');
+        window.scrollTo(0, originalScrollPos);
+        alert("產生圖片時發生錯誤，請稍後再試。");
+        updateSyncStatus('❌ 生成失敗', 2000);
+      }
+    };
+
+    function showPreviewModal(dataUrl) {
+      const modal = document.getElementById('preview-modal');
+      const img = document.getElementById('preview-image');
+      const actions = document.getElementById('preview-actions');
+      
+      img.src = dataUrl;
+      actions.innerHTML = '';
+      
+      // 偵測是否為 iOS 裝置
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const dateStr = getDateKey(currentDate);
+      const fileName = `電子老黃曆_${dateStr}.png`;
+
+      if (isIOS) {
+        // iOS 折衷導引方案
+        actions.innerHTML = `
+          <button class="modal-btn" style="background: #4caf50; color: white; font-size: 18px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="window.shareImage('${dataUrl}', '${fileName}')">
+            <span class="material-icons-outlined" style="font-size: 22px;">file_download</span> 儲存至相簿 / 分享
+          </button>
+          <div style="color: #ddd; font-size: 13px; text-align: center; line-height: 1.4; padding: 0 10px;">
+            點擊後，請於下方跳出的選單中點選「儲存影像」即可保存。
+          </div>
+        `;
+      } else {
+        // Android / Desktop 直接下載方案
+        actions.innerHTML = `
+          <button class="modal-btn" style="background: #4caf50; color: white; font-size: 18px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="window.downloadImage('${dataUrl}', '${fileName}')">
+            <span class="material-icons-outlined" style="font-size: 22px;">file_download</span> 儲存圖片
+          </button>
+        `;
+      }
+      
+      modal.classList.add('show');
+    }
+
+    window.downloadImage = function(dataUrl, fileName) {
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+
+    window.shareImage = async function(dataUrl, fileName) {
+      try {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], fileName, { type: 'image/png' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: '電子老黃曆',
+            text: '紀錄生活點滴'
+          });
+        } else {
+          // 若不支援 share API，降級回直接下載
+          window.downloadImage(dataUrl, fileName);
+        }
+      } catch (err) {
+        console.error("呼叫分享失敗:", err);
+        // 用戶取消分享時會拋出 AbortError，這不需要報錯；其他錯誤則嘗試下載
+        if (err.name !== 'AbortError') {
+          window.downloadImage(dataUrl, fileName);
+        }
+      }
+    };
 
     // ★ 特製版：啟動時自動綁定與初始化指定帳號
     async function loadHardcodedUser() {
@@ -749,15 +989,13 @@
 
     window.toggleArticleEdit = function() {
       const dateKey = getDateKey(currentDate);
-      const displayEl = document.getElementById('display-footer');
+      const displayArea = document.getElementById('article-display-area'); // ★ 改抓雙欄容器
       const editEl = document.getElementById('edit-article');
-      const scrollArea = document.getElementById('reading-scroll-area'); 
       const btnEl = document.getElementById('btn-article-edit');
 
       if (!isEditingArticle) {
         let currentContent = "";
         if (customArticles[dateKey]) { 
-          // ★ 修改：讀取時判斷有無獨立標題
           if (customArticles[dateKey].title) {
             currentContent = customArticles[dateKey].title;
             if (customArticles[dateKey].content) { currentContent += '\n' + customArticles[dateKey].content; }
@@ -767,7 +1005,7 @@
         }
         
         editEl.value = currentContent;
-        scrollArea.style.display = 'none'; 
+        displayArea.style.display = 'none'; // ★ 隱藏整個雙欄顯示區
         editEl.style.display = 'block';
         setTimeout(() => window.autoResizeTextarea(editEl), 0); 
         
@@ -780,7 +1018,6 @@
           delete customArticles[dateKey]; 
         } else {
           const lines = val.split('\n');
-          // ★ 修改：跳過開頭空白行，尋找第一行文字
           let firstNonEmptyIdx = -1;
           for (let i = 0; i < lines.length; i++) {
             if (lines[i].trim().length > 0) {
@@ -791,7 +1028,6 @@
           
           if (firstNonEmptyIdx !== -1) {
             const firstLine = lines[firstNonEmptyIdx].trim();
-            // 判斷第一行是否超過 20 字元
             if (firstLine.length <= 20) {
               customArticles[dateKey] = { 
                 title: firstLine, 
@@ -799,7 +1035,7 @@
               };
             } else {
               customArticles[dateKey] = { 
-                title: "", // 空標題代表無標題文章
+                title: "", 
                 content: lines.slice(firstNonEmptyIdx).join('\n').trim() 
               };
             }
@@ -811,7 +1047,7 @@
         saveToCloud();
         
         editEl.style.display = 'none';
-        scrollArea.style.display = 'block'; 
+        displayArea.style.display = 'flex'; // ★ 重新顯示雙欄顯示區
         
         btnEl.innerHTML = '靜心隨筆 <span class="material-symbols-outlined" style="font-size: 18px; margin-left: 6px;">edit</span>';
         isEditingArticle = false;
@@ -828,10 +1064,21 @@
       const newHeight = el.scrollHeight;
       el.style.height = newHeight + 'px'; 
 
-      if (newHeight > oldHeight) {
-        window.scrollTo(0, scrollPos + (newHeight - oldHeight));
+      // ★ 修改：如果是備忘錄編輯框，則讓內部的容器滾動，避免畫面跟著跳動
+      if (el.id === 'edit-memo' || el.id === 'edit-memo-back') {
+        const wrapper = el.closest('.memo-scroll-wrapper');
+        if (wrapper && newHeight > oldHeight) {
+          wrapper.scrollTop = wrapper.scrollHeight;
+        }
+        window.scrollTo(0, scrollPos); 
+        if (wrapper) window.updateMemoScrollHint(wrapper);
       } else {
-        window.scrollTo(0, scrollPos);
+        if (newHeight > oldHeight) {
+          window.scrollTo(0, scrollPos + (newHeight - oldHeight));
+        } else {
+          window.scrollTo(0, scrollPos);
+        }
+        window.updateScrollHint();
       }
     };
 
@@ -1067,15 +1314,31 @@
       document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     };
 
-    window.updateScrollHint = function() {
-      const container = document.getElementById('reading-scroll-area');
-      if (!container || isEditingArticle) return; 
-      const maxScroll = container.scrollWidth - container.clientWidth;
-      if (maxScroll <= 5) { container.setAttribute('data-scroll-state', 'none'); return; }
-      const currentScroll = Math.abs(container.scrollLeft);
-      if (currentScroll <= 5) { container.setAttribute('data-scroll-state', 'start'); } 
-      else if (currentScroll >= maxScroll - 5) { container.setAttribute('data-scroll-state', 'end'); } 
-      else { container.setAttribute('data-scroll-state', 'middle'); }
+    window.updateScrollHint = function(el) {
+      if (isEditingArticle) return;
+      const containers = el && el.classList ? [el] : [document.getElementById('reading-scroll-area'), document.getElementById('reading-scroll-area-back')];
+      containers.forEach(container => {
+        if (!container) return; 
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        if (maxScroll <= 5) { container.setAttribute('data-scroll-state', 'none'); return; }
+        const currentScroll = Math.abs(container.scrollLeft);
+        if (currentScroll <= 5) { container.setAttribute('data-scroll-state', 'start'); } 
+        else if (currentScroll >= maxScroll - 5) { container.setAttribute('data-scroll-state', 'end'); } 
+        else { container.setAttribute('data-scroll-state', 'middle'); }
+      });
+    };
+
+    window.updateMemoScrollHint = function(el) {
+      const containers = el && el.classList ? [el] : [document.getElementById('memo-scroll-area'), document.getElementById('memo-scroll-area-back')];
+      containers.forEach(container => {
+        if (!container) return;
+        const maxScroll = container.scrollHeight - container.clientHeight;
+        if (maxScroll <= 5) { container.setAttribute('data-scroll-state', 'none'); return; }
+        const currentScroll = Math.abs(container.scrollTop);
+        if (currentScroll <= 5) { container.setAttribute('data-scroll-state', 'start'); } 
+        else if (currentScroll >= maxScroll - 5) { container.setAttribute('data-scroll-state', 'end'); } 
+        else { container.setAttribute('data-scroll-state', 'middle'); }
+      });
     };
 
     function init() {
@@ -1120,7 +1383,7 @@
       if (btnArticleToday) btnArticleToday.style.display = isToday ? 'none' : 'flex';
 
       const rocYearEl = el('roc-year');
-      if(rocYearEl) rocYearEl.innerText = `民國${year - 1911}年 ▾`;
+      if(rocYearEl) rocYearEl.innerHTML = `民國${year - 1911}年 <span class="dropdown-arrow">▾</span>`;
       
       const gregorianYearMonthEl = el('gregorian-year-month');
       if(gregorianYearMonthEl) gregorianYearMonthEl.innerText = `西元${year}年${month}月`;
@@ -1157,25 +1420,28 @@
       }
 
       const footerEl = el('display-footer');
-      if (footerEl) {
+      const fixedTitleEl = el('display-fixed-title'); // ★ 抓取固定標題區塊
+      
+      if (footerEl && fixedTitleEl) {
         if (customArticles[dateKey]) {
-          let text = "";
-          // ★ 修改：顯示時判斷有無獨立標題
+          // ★ 判斷有無獨立標題，若有則拆分至固定區塊
           if (customArticles[dateKey].title) {
-            text = `【${customArticles[dateKey].title}】`;
-            if (customArticles[dateKey].content) { text += `\n\n${customArticles[dateKey].content}`; }
+            fixedTitleEl.innerText = `【${customArticles[dateKey].title}】`;
+            fixedTitleEl.style.display = 'block';
+            footerEl.innerText = formatTextForDisplay(customArticles[dateKey].content || "", 30);
           } else {
-            text = customArticles[dateKey].content || "";
+            fixedTitleEl.style.display = 'none';
+            footerEl.innerText = formatTextForDisplay(customArticles[dateKey].content || "", 30);
           }
-          footerEl.innerText = formatTextForDisplay(text, 30);
         } else {
           const articleKeys = Object.keys(customArticles).sort((a, b) => b.localeCompare(a));
           if (articleKeys.length > 0) {
-            let tocHTML = `《 靜心隨筆 》目錄\n\n`;
+            fixedTitleEl.innerText = "《 靜心隨筆 》目錄"; // ★ 將目錄標題固定
+            fixedTitleEl.style.display = 'block';
+            
             let items = articleKeys.map(k => {
               const y = k.substring(0, 4), m = parseInt(k.substring(4, 6), 10), d = parseInt(k.substring(6, 8), 10);
               
-              // ★ 修改：目錄顯示時，若無標題則擷取內文前10字，並過濾括號
               let title = customArticles[k].title;
               if (!title) {
                 const content = customArticles[k].content || '';
@@ -1188,9 +1454,9 @@
               const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
               return `<span class="toc-item" onclick="window.jumpToDiaryDate('${k}')">【${safeTitle}】${y}.${m}.${d}</span>`;
             });
-            tocHTML += items.join('\n');
-            footerEl.innerHTML = tocHTML;
+            footerEl.innerHTML = items.join('\n'); // ★ 內文只保留項目
           } else {
+            fixedTitleEl.style.display = 'none';
             footerEl.innerText = formatTextForDisplay("點觸上方「靜心隨筆」可輸入文章，再點觸一次可儲存。\n開始您新一日的創作吧。", 30);
           }
         }
@@ -1200,7 +1466,11 @@
         requestAnimationFrame(() => {
           const scrollArea = el('reading-scroll-area');
           if (scrollArea) { scrollArea.scrollLeft = 0; }
-          setTimeout(window.updateScrollHint, 50); 
+          setTimeout(() => window.updateScrollHint(), 50); 
+          
+          const memoArea = el('memo-scroll-area');
+          if (memoArea) { memoArea.scrollTop = 0; }
+          setTimeout(() => window.updateMemoScrollHint(), 50);
         });
       }
     }
